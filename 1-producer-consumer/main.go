@@ -11,6 +11,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 )
 
@@ -45,12 +46,21 @@ func main() {
 	start := time.Now()
 	stream := GetMockStream()
 	tweetChan := make(chan *Tweet, 10)
+	var wg sync.WaitGroup
+	wg.Add(2)
 
 	// Producer
-	go producer(stream, tweetChan)
+	go func() {
+		defer wg.Done()
+		producer(stream, tweetChan)
+	}()
 
 	// Consumer
-	go consumer(tweetChan)
+	go func() {
+		defer wg.Done()
+		consumer(tweetChan)
+	}()
 
+	wg.Wait()
 	fmt.Printf("Process took %s\n", time.Since(start))
 }
